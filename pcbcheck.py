@@ -3,13 +3,45 @@
 from __future__ import with_statement
 import os
 import sys
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import subprocess
+import re
 from ansicolor import red
 from ansicolor import green
 from ansicolor import black
 
-def checkExcellonMetric(filepath):
+def extractToolStatistics(lines):
+    """
+    From a list of excellon drill lines extract the number of holes for all drill sizes.
+    Returns a dict: {drill size: number of holes}
+    """
+    #Get a tool --> diameter mapping
+    tools = extractExcellonTools(lines)
+    #Iterate over lines and count holes for each tool
+    currentTool = None
+    drillCountByDiameter = defaultdict(int)
+    toolRegex = re.compile(r"^(T\d+)$")
+    drillRegex = re.compile(r"^X[\+-]\d+Y[\+-]\d+$")
+    for line in lines:
+        if toolRegex.match(line):
+            #This line defines a new tool to use
+            currentTool = toolRegex.match(line).group(0)
+        if drillRegex.match(line):
+            drillCountByDiameter[tools[currentTool]] += 1
+    return drillCountByDiameter
+
+def extractExcellonTools(lines):
+    """
+    From a list of excellon lines, extract a dict of tools
+    Ignores non-tool-definition lines
+    Example: ["foobar", "T01C1.0", "T02C2.2"] -> {"T01": 1.0, "T02": 2.2}
+    """
+    #Extract those lines that match a regex
+    toolDefRegex = re.compile(r"^(T\d+)C([0-9\.]+)$")
+    toolDefMatches = [toolDefRegex.match(l) for l in lines if toolDefRegex.match(l)]
+    return dict([(t.group(1), float(t.group(2))) for t in toolDefMatches])
+
+def checkExcellonMetric(self, filepath):
     "Check if a given file is a metric excellon file"
     filename = os.path.basename(filepath)
     #Read lines
@@ -21,6 +53,17 @@ def checkExcellonMetric(filepath):
     #Check for metric dimension: Line like METRIC,0000.00
     if lines[1].partition(",")[0] != "METRIC":
         print red("Excellon drill program %s does not seem to be metric" % filename, bold="True")
+    #
+    # Drill statistics
+    #
+    toolStats = extractToolStatistics(lines)
+    print(black(self.name + ":", bold=True))
+    for diameter, numDrills in toolStats.iteritems():
+        print("\t%d through holes of diameter %.2fmm: " % (numDrills, diameter))
+    #Print "None" if there are no holes in this file
+    if not toolStats:
+        print "\tNone"
+
 
 
 ExpectedFile = namedtuple('ExpectedFile', ['extension', 'name', 'checkFN'])
@@ -57,7 +100,7 @@ def checkFile(directory, expectedFile, projectName):
     if os.path.isfile(filepath):
         print green("Found production data %s" % filename)
         if expectedFile.checkFN is not None:
-            expectedFile.checkFN(filepath)
+            expectedFile.checkFN(expectedFile, filepath)
     else:
         print red("File %s (%s) missing" % (filename, expectedFile.name), bold=True)
         return None
