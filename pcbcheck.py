@@ -6,9 +6,12 @@ import sys
 from collections import namedtuple, defaultdict
 import subprocess
 import re
-from ansicolor import red
-from ansicolor import green
-from ansicolor import black
+from ansicolor import red, yellow, green, black
+
+def readFileLines(filepath):
+    "Get stripped lines of a given file"
+    with open(filepath) as fin:
+        return [l.strip() for l in fin.read().split("\n")]
 
 def extractToolStatistics(lines):
     """
@@ -44,9 +47,7 @@ def extractExcellonTools(lines):
 def checkExcellonMetric(self, filepath):
     "Check if a given file is a metric excellon file"
     filename = os.path.basename(filepath)
-    #Read lines
-    with open(filepath) as fin:
-        lines = [l.strip() for l in fin.read().split("\n")]
+    lines = readFileLines(filepath)
     #Check for excellon header
     if lines[0] != "M48":
         print red("Can't find Excellon drill header (M48) in %s" % filename, bold="True")
@@ -64,21 +65,44 @@ def checkExcellonMetric(self, filepath):
     if not toolStats:
         print "\tNone"
 
+#Multimap of allowed layer notes (ExpectedFile.name --> [%LN])
+#Built for diptrace. Might need to be adjusted for other EDA tools.
+allowedLayerNotes = defaultdict(list)
+allowedLayerNotes.update({
+    "Top copper layer": ["Top"],
+    "Bottom copper layer": ["Bottom"],
+    "Solder mask top": ["TopMask"],
+    "Solder mask bottom": ["BotMask"],
+    "Board outline": ["BoardOutline"],
+    "Board outline": ["BoardOutline"],
+    "Silk screen top": ["TopSilk"],
+})
 
-
-ExpectedFile = namedtuple('ExpectedFile', ['extension', 'name', 'checkFN'])
-expectedFiles = [
-    #http://www.multi-circuit-boards.eu/support/leiterplatten-daten/gerber-daten.html
-    ExpectedFile(".top", "Top copper layer", None),
-    ExpectedFile(".bot", "Bottom copper layer", None),
-    ExpectedFile(".smt", "Solder mask top", None),
-    ExpectedFile(".smb", "Solder mask bottom", None),
-    ExpectedFile(".plt", "Silk screen top", None),
-    ExpectedFile(".mil", "Board outline mill data", None),
-    #Drilling
-    ExpectedFile(".pth", "Plated through holes", checkExcellonMetric),
-    ExpectedFile(".npth", "Non-plated through holes", checkExcellonMetric),
-]
+def checkGerberFile(self, filepath):
+    """
+    Check if the given file is a RS-274X gerber file
+    - Checks for a G04 command at the beginning of the file
+    - Checks for a %LN command and verifies it against the filename
+    """
+    filename = os.path.basename(filepath)
+    lines = readFileLines(filepath)
+    #Find G04 line (i.e. what software created the file)
+    if not any(map(lambda l: l.startswith("G04 "), lines)):
+        print (red("Couldn't find G04 command (software description) in %s. Probably not a Gerber file." % filename, bold=True))
+    #Find %LN line, i.e. what the creating
+    # software thinks the current layer is (e.g. "BottomMask")
+    layerNoteRegex = re.compile(r"^\%LN([^\*]+)\*%$")
+    layerDescription = None
+    for line in lines:
+        if layerNoteRegex.match(line):
+            layerDescription = layerNoteRegex.match(line).group(1)
+            break #Expecting only one layer note
+    #Check if the layer note we found makes sense
+    if layerDescription == None: #No %LN line found
+        print (yellow("Couldn't find %%LN command (layer description) in %s" % filename))
+    else: #We found a layer description. Check for sanity
+        if layerDescription not in allowedLayerNotes[self.name]:
+            print (red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
 
 def extractProjectPrefix(files):
     """
@@ -89,7 +113,8 @@ def extractProjectPrefix(files):
     commonprefix = os.path.commonprefix(files)
     if not commonprefix or not commonprefix.endswith("."):
         print red("Can't extract project name from files: %s" % ", ".join(files), bold=True)
-        print red("Ensure all files have a common filename and only differ in their extension!", bold=True)
+        print red("Please ensure that all files have a common filename and only differ in their extension!", bold=True)
+        print red("Example: MyBoard.top, MyBoard.bot, ...", bold=True)
         sys.exit(1)
     return commonprefix[:-1] #Strp off dot
 
@@ -105,6 +130,20 @@ def checkFile(directory, expectedFile, projectName):
         print red("File %s (%s) missing" % (filename, expectedFile.name), bold=True)
         return None
     return filename
+
+ExpectedFile = namedtuple('ExpectedFile', ['extension', 'name', 'checkFN'])
+expectedFiles = [
+    #http://www.multi-circuit-boards.eu/support/leiterplatten-daten/gerber-daten.html
+    ExpectedFile(".top", "Top copper layer", checkGerberFile),
+    ExpectedFile(".bot", "Bottom copper layer", checkGerberFile),
+    ExpectedFile(".smt", "Solder mask top", checkGerberFile),
+    ExpectedFile(".smb", "Solder mask bottom", checkGerberFile),
+    ExpectedFile(".plt", "Silk screen top", checkGerberFile),
+    ExpectedFile(".mil", "Board outline", checkGerberFile),
+    #Drilling
+    ExpectedFile(".pth", "Plated through holes", checkExcellonMetric),
+    ExpectedFile(".npth", "Non-plated through holes", checkExcellonMetric),
+]
 
 if __name__ == "__main__":
     #Parse commandline arguments

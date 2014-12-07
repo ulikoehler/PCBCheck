@@ -12,9 +12,23 @@ Note that PCBCheck does not replace your EDA design rule check, it rather supple
 While PCBCheck e.g. currently doesn't verify clearances, it (partially) verifies the files are names
 correctly and present.
 
-The file naming scheme that is configured in PCBCheck is the one listed at [MultiCB](http://www.multi-circuit-boards.eu/en/support/pcb-data/gerber-data.html).
+The file naming scheme that is configured in PCBCheck is the one listed at [MultiCB](http://www.multi-circuit-boards.eu/en/support/pcb-data/gerber-data.html). 
+
+I use this tool with DipTrace. While it can also be used to verify files exported by other EDA tools,
+minor modifications might be neccessary. PCBCheck usually tells you what's wrong
 
 Contributions are welcome.
+
+How to use
+=========
+
+```bash
+pip install -r requirements.txt
+python pcbcheck.py <directory>
+```
+
+As argument to `pcbcheck.py`, use the directory where your Gerber and drill files are stored.
+For further options, refer to `pcbcheck.py --help`
 
 Licensing
 ========
