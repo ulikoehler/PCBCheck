@@ -60,7 +60,7 @@ def checkExcellonMetric(self, filepath):
     toolStats = extractToolStatistics(lines)
     print(black(self.name + ":", bold=True))
     for diameter, numDrills in toolStats.iteritems():
-        print("\t%d through holes of diameter %.2fmm: " % (numDrills, diameter))
+        print("\t%d through holes of diameter %.2fmm" % (numDrills, diameter))
     #Print "None" if there are no holes in this file
     if not toolStats:
         print "\tNone"
