@@ -101,6 +101,14 @@ def findAperture(apertures, identifier):
         if aperture.id == identifier: return aperture
     return None
 
+def parseGerberUnit(lines):
+    """Returns the extended gerber unit ("mm"/"in") or None if not found"""
+    if "%MOIN*%" in lines:
+        return "in"
+    elif "%MOMM*%" in lines:
+        return "mm"
+    else: return None
+
 def checkBoardOutline(self, filepath):
     filename = os.path.basename(filepath)
     #Basic gerber checks
@@ -112,11 +120,7 @@ def checkBoardOutline(self, filepath):
         print (yellow("Mill coordinates in %s don't seem to be absolute (G90 missing!)" % filename))
         return
     #Determine coordinate units
-    unit = None
-    if "%MOIN*%" in millLines:
-        unit = "in"
-    elif "%MOMM*%" in millLines:
-        unit = "mm"
+    unit = parseGerberUnit(millLines)
     if unit is None: #Neither inch nor mm found
         print (yellow("Could not find coordinate units (mm/in) in %s" % filename))
         return
@@ -159,6 +163,20 @@ def checkBoardOutline(self, filepath):
     print (black("\tBoard size (minimum rectangle): %.1f %s x %.1f %s" % \
             (boardSize[0], unit, boardSize[1], unit)))
 
+def checkCopperLayer(self, filepath):
+    #Basic gerber checks
+    checkGerberFile(self, filepath)
+    #Check if smallest aperture is < 6mil = 150um
+    #NOTE: We currently don't compute the clearance (way too complicated)
+    lines = readFileLines(filepath)
+    apertures = parseGerberApertures(lines)
+    unit = parseGerberUnit(lines)
+    limit = 0.152 #TODO use inches if unit == "in"
+    if unit == "in": limit = 0.006
+    for aperture in apertures:
+        if aperture.diameter < limit:
+            print red("Aperture %s (size %.3f %s) is smaller than %.3f %s minimum width" % \
+                        (aperture.id, aperture.diameter, unit, limit, unit))
 
 def checkGerberFile(self, filepath):
     """
@@ -216,8 +234,8 @@ def checkFile(directory, expectedFile, projectName):
 ExpectedFile = namedtuple('ExpectedFile', ['extension', 'name', 'format', 'checkFN'])
 expectedFiles = [
     #http://www.multi-circuit-boards.eu/support/leiterplatten-daten/gerber-daten.html
-    ExpectedFile(".top", "Top copper layer", "RS-274X", checkGerberFile),
-    ExpectedFile(".bot", "Bottom copper layer", "RS-274X", checkGerberFile),
+    ExpectedFile(".top", "Top copper layer", "RS-274X", checkCopperLayer),
+    ExpectedFile(".bot", "Bottom copper layer", "RS-274X", checkCopperLayer),
     ExpectedFile(".smt", "Solder mask top", "RS-274X", checkGerberFile),
     ExpectedFile(".smb", "Solder mask bottom", "RS-274X", checkGerberFile),
     ExpectedFile(".plt", "Silk screen top", "RS-274X", checkGerberFile),
