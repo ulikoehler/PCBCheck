@@ -69,13 +69,12 @@ def checkExcellonMetric(self, filepath):
 #Built for diptrace. Might need to be adjusted for other EDA tools.
 allowedLayerNotes = defaultdict(list)
 allowedLayerNotes.update({
-    "Top copper layer": ["Top"],
-    "Bottom copper layer": ["Bottom"],
-    "Solder mask top": ["TopMask"],
-    "Solder mask bottom": ["BotMask"],
-    "Board outline": ["BoardOutline"],
-    "Board outline": ["BoardOutline"],
-    "Silk screen top": ["TopSilk"],
+    "Top copper layer": ["Top", ['Copper', 'L1', 'Top']],
+    "Bottom copper layer": ["Bottom", ['Copper', 'L2', 'Bot']],
+    "Solder mask top": ["TopMask", ['Soldermask', 'Top']],
+    "Solder mask bottom": ["BotMask", ['Soldermask', 'Bot']],
+    "Board outline": ["BoardOutline", ['Profile']],
+    "Silk screen top": ["TopSilk", ['Legend', 'Top']],
 })
 
 #Gerber aperture
@@ -109,12 +108,26 @@ def parseGerberUnit(lines):
         return "mm"
     else: return None
 
+def findCoordinateFormat(lines):
+    """
+    Try to find a FSLAX line and return the decimal-point factor for coordinates.
+    """
+    rgx = re.compile(r"\%FSLAX(\d{2})Y(\d{2})\*\%")
+    for line in lines:
+        m = rgx.match(line)
+        if m is not None:
+            return 10.**int(m.group(1)[-1]),10.**int(m.group(2)[-1])
+    print(red("Could not find coordinate format info %FSLAX. Using default %FSLAX33"))
+    return 100000.,100000.
+
 def checkBoardOutline(self, filepath):
     filename = os.path.basename(filepath)
     #Basic gerber checks
     checkGerberFile(self, filepath)
     #Compute board outline
     millLines = readFileLines(filepath)
+    # Find factors to get absolute coordinates:
+    x_factor, y_factor = findCoordinateFormat(millLines)
     #We can only interpret the file if coordinates are absolute
     if not "G90*" in millLines:
         print (yellow("Mill coordinates in %s don't seem to be absolute (G90 missing!)" % filename))
@@ -140,17 +153,17 @@ def checkBoardOutline(self, filepath):
             currentAperture = findAperture(apertures, apertureCode)
         elif move2DRegex.match(line):
             match = move2DRegex.match(line)
-            x = int(match.group(1)) / 1000.0
-            y = int(match.group(2)) / 1000.0
+            x = int(match.group(1)) / x_factor
+            y = int(match.group(2)) / y_factor
         elif move1DRegex.match(line):
             match = move1DRegex.match(line)
             if match.group(1) == "X":
-                x = int(match.group(2)) / 1000.0
+                x = int(match.group(2)) / x_factor
                 y = lastCoords[1]
             elif match.group(1) == "Y":
                 x = lastCoords[0]
-                y = int(match.group(2)) / 1000.0
-            else: raise Exception("Internal error: Invalid coordinate type: %s" % match.group(1))
+                y = int(match.group(2)) / y_factor
+            else: raise Exception("Internal error: Invalid coordinate type in 1D move: %s" % match.group(1))
         else: continue
         #Compute min/max coordinates
         lastCoords = (x, y)
@@ -183,6 +196,7 @@ def checkGerberFile(self, filepath):
     Check if the given file is a RS-274X gerber file
     - Checks for a G04 command at the beginning of the file
     - Checks for a %LN command and verifies it against the filename
+    - Checks for a G04 #@! TF.FileFunction command
     """
     filename = os.path.basename(filepath)
     lines = readFileLines(filepath)
@@ -192,17 +206,26 @@ def checkGerberFile(self, filepath):
     #Find %LN line, i.e. what the creating
     # software thinks the current layer is (e.g. "BottomMask")
     layerNoteRegex = re.compile(r"^\%LN([^\*]+)\*%$")
+    fileFunctionRegex = re.compile(r"G04 #@! TF\.FileFunction,([^\*]+)\*")
     layerDescription = None
     for line in lines:
         if layerNoteRegex.match(line):
             layerDescription = layerNoteRegex.match(line).group(1)
             break #Expecting only one layer note
+        elif fileFunctionRegex.match(line):
+            layerDescription = fileFunctionRegex.match(line).group(1)
+            layerDescription = layerDescription.split(",")
     #Check if the layer note we found makes sense
     if layerDescription == None: #No %LN line found
-        print (yellow("Couldn't find %%LN command (layer description) in %s" % filename))
+        print (yellow("Couldn't find %%LN command or file function command in %s" % filename))
     else: #We found a layer description. Check for sanity
-        if layerDescription not in allowedLayerNotes[self.name]:
-            print (red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
+        if isinstance(layerDescription, list): # FileFunction command
+            if layerDescription not in allowedLayerNotes[self.name]:
+                    print (red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
+
+        else: # %LN command
+            if layerDescription not in allowedLayerNotes[self.name]:
+                print (red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
 
 def extractProjectPrefix(files):
     """
