@@ -172,7 +172,7 @@ def checkBoardOutline(self, filepath):
     #Compute board size (minimum enclosing rectangle)
     boardSize = (maxCoords[0] - minCoords[0], maxCoords[1] - minCoords[1])
     #Print info
-    print (black("\tGerber offset: ({1:.2f} {0}, {2:.2f} {0})".format(unit, minCoords[0], minCoords[1]))))
+    print (black("\tGerber offset: ({1:.2f} {0}, {2:.2f} {0})".format(unit, minCoords[0], minCoords[1])))
     print (black("\tBoard size (minimum rectangle): %.1f %s x %.1f %s" % \
             (boardSize[0], unit, boardSize[1], unit)))
 
