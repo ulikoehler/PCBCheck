@@ -3,7 +3,7 @@
 from __future__ import with_statement
 import os
 import sys
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, Counter
 import subprocess
 import re
 from ansicolor import red, yellow, green, black
@@ -140,13 +140,14 @@ def checkBoardOutline(self, filepath):
     #Parse the aperture list
     apertures = parseGerberApertures(millLines)
     selectApertureRegex = re.compile(r"(D\d+)\*")
-    move2DRegex = re.compile(r"X(\d+)Y(\d+)D(\d)\*") #Move (D2) or draw (D1)
-    move1DRegex = re.compile(r"([XY])(\d+)D(\d)\*") #With only one coordinate
+    move2DRegex = re.compile(r"X(\d+)Y(\d+)D(\d+)\*") #Move (D2) or draw (D1)
+    move1DRegex = re.compile(r"([XY])(\d+)D(\d+)\*") #With only one coordinate
     #Try to interpret gerber file
     minCoords = (sys.maxsize, sys.maxsize)
     maxCoords = (0, 0)
     lastCoords = (0, 0)
     currentAperture = None
+    apertureUseCount = Counter()
     for line in millLines:
         if selectApertureRegex.match(line):
             apertureCode = selectApertureRegex.match(line).group(1)
@@ -155,8 +156,10 @@ def checkBoardOutline(self, filepath):
             match = move2DRegex.match(line)
             x = int(match.group(1)) / x_factor
             y = int(match.group(2)) / y_factor
+            apertureUseCount[currentAperture] += 1
         elif move1DRegex.match(line):
             match = move1DRegex.match(line)
+            apertureUseCount[currentAperture] += 1
             if match.group(1) == "X":
                 x = int(match.group(2)) / x_factor
                 y = lastCoords[1]
@@ -171,10 +174,13 @@ def checkBoardOutline(self, filepath):
         maxCoords = (max(maxCoords[0], lastCoords[0]), max(maxCoords[1], lastCoords[1]))
     #Compute board size (minimum enclosing rectangle)
     boardSize = (maxCoords[0] - minCoords[0], maxCoords[1] - minCoords[1])
+    # Compute size of most common aperture
+    mostCommonAperture = apertureUseCount.most_common(1)[0][0]
     #Print info
     print (black("\tGerber offset: ({1:.2f} {0}, {2:.2f} {0})".format(unit, minCoords[0], minCoords[1])))
     print (black("\tBoard size (minimum rectangle): %.1f %s x %.1f %s" % \
             (boardSize[0], unit, boardSize[1], unit)))
+    #print(black("\tBoard outline aperture size: {0:.2f} µm".format(1e3 * mostCommonAperture.diameter), bold=True))
 
 def checkCopperLayer(self, filepath):
     #Basic gerber checks
@@ -184,7 +190,7 @@ def checkCopperLayer(self, filepath):
     lines = readFileLines(filepath)
     apertures = parseGerberApertures(lines)
     unit = parseGerberUnit(lines)
-    limit = 0.152 #TODO use inches if unit == "in"
+    limit = 0.125 #TODO use inches if unit == "in"
     if unit == "in": limit = 0.006
     for aperture in apertures:
         if aperture.diameter < limit:
