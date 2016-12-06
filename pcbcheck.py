@@ -50,20 +50,20 @@ def checkExcellonMetric(self, filepath):
     lines = readFileLines(filepath)
     #Check for excellon header
     if lines[0] != "M48":
-        print red("Can't find Excellon drill header (M48) in %s" % filename, bold="True")
+        print(red("Can't find Excellon drill header (M48) in %s" % filename, bold="True"))
     #Check for metric dimension: Line like METRIC,0000.00
     if lines[1].partition(",")[0] != "METRIC":
-        print red("Excellon drill program %s does not seem to be metric" % filename, bold="True")
+        print(red("Excellon drill program %s does not seem to be metric" % filename, bold="True"))
     #
     # Drill statistics
     #
     toolStats = extractToolStatistics(lines)
     print(black(self.name + ":", bold=True))
-    for diameter, numDrills in toolStats.iteritems():
+    for diameter, numDrills in toolStats.items():
         print("\t%d through holes of diameter %.2fmm" % (numDrills, diameter))
     #Print "None" if there are no holes in this file
     if not toolStats:
-        print "\tNone"
+        print("\tNone")
 
 #Multimap of allowed layer notes (ExpectedFile.name --> [%LN])
 #Built for diptrace. Might need to be adjusted for other EDA tools.
@@ -130,12 +130,12 @@ def checkBoardOutline(self, filepath):
     x_factor, y_factor = findCoordinateFormat(millLines)
     #We can only interpret the file if coordinates are absolute
     if not "G90*" in millLines:
-        print (yellow("Mill coordinates in %s don't seem to be absolute (G90 missing!)" % filename))
+        print(yellow("Mill coordinates in %s don't seem to be absolute (G90 missing!)" % filename))
         return
     #Determine coordinate units
     unit = parseGerberUnit(millLines)
     if unit is None: #Neither inch nor mm found
-        print (yellow("Could not find coordinate units (mm/in) in %s" % filename))
+        print(yellow("Could not find coordinate units (mm/in) in %s" % filename))
         return
     #Parse the aperture list
     apertures = parseGerberApertures(millLines)
@@ -176,9 +176,9 @@ def checkBoardOutline(self, filepath):
     boardSize = (maxCoords[0] - minCoords[0], maxCoords[1] - minCoords[1])
     # Compute size of most common aperture
     mostCommonAperture = apertureUseCount.most_common(1)[0][0]
-    #Print info
-    print (black("\tGerber offset: ({1:.2f} {0}, {2:.2f} {0})".format(unit, minCoords[0], minCoords[1])))
-    print (black("\tBoard size (minimum rectangle): %.1f %s x %.1f %s" % \
+    #   info
+    print(black("\tGerber offset: ({1:.2f} {0}, {2:.2f} {0})".format(unit, minCoords[0], minCoords[1])))
+    print(black("\tBoard size (minimum rectangle): %.1f %s x %.1f %s" % \
             (boardSize[0], unit, boardSize[1], unit)))
     #print(black("\tBoard outline aperture size: {0:.2f} µm".format(1e3 * mostCommonAperture.diameter), bold=True))
 
@@ -194,8 +194,8 @@ def checkCopperLayer(self, filepath):
     if unit == "in": limit = 0.006
     for aperture in apertures:
         if aperture.diameter < limit:
-            print red("Aperture %s (size %.3f %s) is smaller than %.3f %s minimum width" % \
-                        (aperture.id, aperture.diameter, unit, limit, unit))
+            print(red("Aperture %s (size %.3f %s) is smaller than %.3f %s minimum width" % \
+                        (aperture.id, aperture.diameter, unit, limit, unit)))
 
 def checkGerberFile(self, filepath):
     """
@@ -208,7 +208,7 @@ def checkGerberFile(self, filepath):
     lines = readFileLines(filepath)
     #Find G04 line (i.e. what software created the file)
     if not any(map(lambda l: l.startswith("G04 "), lines)):
-        print (red("Couldn't find G04 command (software description) in %s. Probably not a Gerber file." % filename, bold=True))
+        print(red("Couldn't find G04 command (software description) in %s. Probably not a Gerber file." % filename, bold=True))
     #Find %LN line, i.e. what the creating
     # software thinks the current layer is (e.g. "BottomMask")
     layerNoteRegex = re.compile(r"^\%LN([^\*]+)\*%$")
@@ -223,15 +223,15 @@ def checkGerberFile(self, filepath):
             layerDescription = layerDescription.split(",")
     #Check if the layer note we found makes sense
     if layerDescription == None: #No %LN line found
-        print (yellow("Couldn't find %%LN command or file function command in %s" % filename))
+        print(yellow("Couldn't find %%LN command or file function command in %s" % filename))
     else: #We found a layer description. Check for sanity
         if isinstance(layerDescription, list): # FileFunction command
             if layerDescription not in allowedLayerNotes[self.name]:
-                    print (red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
+                    print(red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
 
         else: # %LN command
             if layerDescription not in allowedLayerNotes[self.name]:
-                print (red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
+                print(red("Layer description '%s' in %s does not match any of the expected descriptions: %s" % (layerDescription, filename, allowedLayerNotes[self.name]), bold=True))
 
 def extractProjectPrefix(files):
     """
@@ -241,9 +241,9 @@ def extractProjectPrefix(files):
     """
     commonprefix = os.path.commonprefix(files)
     if not commonprefix or not commonprefix.endswith("."):
-        print red("Can't extract project name from files: %s" % ", ".join(files), bold=True)
-        print red("Please ensure that all files have a common filename and only differ in their extension!", bold=True)
-        print red("Example: MyBoard.top, MyBoard.bot, ...", bold=True)
+        print(red("Can't extract project name from files: %s" % ", ".join(files), bold=True))
+        print(red("Please ensure that all files have a common filename and only differ in their extension!", bold=True))
+        print(red("Example: MyBoard.top, MyBoard.bot, ...", bold=True))
         sys.exit(1)
     return commonprefix[:-1] #Strp off dot
 
@@ -252,11 +252,11 @@ def checkFile(directory, expectedFile, projectName):
     filename = projectName + expectedFile.extension
     filepath = os.path.join(directory, filename)
     if os.path.isfile(filepath):
-        print green("Found %s data %s" % (expectedFile.format, filename))
+        print(green("Found %s data %s" % (expectedFile.format, filename)))
         if expectedFile.checkFN is not None:
             expectedFile.checkFN(expectedFile, filepath)
     else:
-        print red("File %s (%s) missing" % (filename, expectedFile.name), bold=True)
+        print(red("File %s (%s) missing" % (filename, expectedFile.name), bold=True))
         return None
     return filename
 
@@ -284,11 +284,11 @@ if __name__ == "__main__":
     #Perform check
     files = os.listdir(args.directory)
     projectName = extractProjectPrefix(files)
-    print black("Project name: %s" % projectName)
+    print(black("Project name: %s" % projectName))
     checkedFiles = [checkFile(args.directory, f, projectName) for f in expectedFiles]
     unknownFiles = set(files) - set(checkedFiles)
     if unknownFiles:
-        print red("Found unknown files: %s" % ",".join(unknownFiles))
+        print(red("Found unknown files: %s" % ",".join(unknownFiles)))
     #Open viewer if enabled
     if args.gerbv:
         filePaths = [os.path.join(args.directory, f) for  f in files]
