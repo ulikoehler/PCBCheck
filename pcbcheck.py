@@ -128,6 +128,8 @@ def checkBoardOutline(self, filepath):
     millLines = readFileLines(filepath)
     # Find factors to get absolute coordinates:
     x_factor, y_factor = findCoordinateFormat(millLines)
+    # Initialize X & Y
+    x, y = 0, 0
     #We can only interpret the file if coordinates are absolute
     if not "G90*" in millLines:
         print(yellow("Mill coordinates in %s don't seem to be absolute (G90 missing!)" % filename))
@@ -140,8 +142,8 @@ def checkBoardOutline(self, filepath):
     #Parse the aperture list
     apertures = parseGerberApertures(millLines)
     selectApertureRegex = re.compile(r"(D\d+)\*")
-    move2DRegex = re.compile(r"X(\d+)Y(\d+)D(\d+)\*") #Move (D2) or draw (D1)
-    move1DRegex = re.compile(r"([XY])(\d+)D(\d+)\*") #With only one coordinate
+    move2DRegex = re.compile(r"X(-?\d+)Y(-?\d+)D(\d+)\*") #Move (D2) or draw (D1)
+    move1DRegex = re.compile(r"([XY])(-?\d+)D(\d+)\*") #With only one coordinate
     #Try to interpret gerber file
     minCoords = (sys.maxsize, sys.maxsize)
     maxCoords = (0, 0)
