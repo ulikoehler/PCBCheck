@@ -7,11 +7,7 @@ from collections import namedtuple, defaultdict, Counter
 import subprocess
 import re
 from ansicolor import red, yellow, green, black
-
-def readFileLines(filepath):
-    "Get stripped lines of a given file"
-    with open(filepath) as fin:
-        return [l.strip() for l in fin.read().split("\n")]
+from ODB.Utils import *
 
 def extractToolStatistics(lines):
     """
