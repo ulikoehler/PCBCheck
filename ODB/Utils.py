@@ -3,7 +3,24 @@
 import gzip
 from zipfile import ZipFile
 
-__all__ = ["readFileLines", "readGZIPFileLines", "readZIPFileLines"]
+__all__ = ["readFileLines", "readGZIPFileLines", "readZIPFileLines", "try_parse_number"]
+
+def try_parse_number(s):
+    """
+    Return int(s), float(s) or s if unparsable.
+    Also returns s if s starts with 0 unless it is "0"
+    (and therefore can't be treated like a number)
+    """
+    if s.startswith("0") and len(s) != 1:
+        return s
+    # Try parsing a nmeric
+    try:
+        return int(s)
+    except ValueError: # Try float or return s
+        try:
+            return float(s)
+        except:
+            return s
 
 def readFileLines(filepath, open_fn=open):
     "Get stripped lines of a given file"

@@ -1,26 +1,20 @@
 #!/usr/bin/env python3
 """
-An utility script to query the version of an ODB++ ZIP file
+Query version info of an ODB++ dataset
 """
-from zipfile import ZipFile
-import re
+from LineRecordParser import
 import os.path
 
-def readODBVersion(filename):
+def readODBVersion(odbpath):
     """
-    Read a ODB++ ZIP file and get the ODB++ version
+    Read a ODB++ directory and get the ODB++ version
     
     Returns a tuple (major, minor) as integers, or (None, None) if not found
     """
-    majorRegex = re.compile(rb"^ODB_VERSION_MAJOR\s+=\s+(\d+)\s*$")
-    minorRegex = re.compile(rb"^ODB_VERSION_MINOR\s+=\s+(\d+)\s*$")
-    
-    prefix = os.path.splitext(os.path.basename(filename))[0]
+
 
     with ZipFile(filename) as myzip:
         with myzip.open('{0}/misc/info'.format(prefix)) as miscInfoFile:
-            majorVersion = None
-            minorVersion = None
             for line in miscInfoFile:
                 if majorRegex.match(line):
                     majorVersion = int(majorRegex.match(line).group(1))

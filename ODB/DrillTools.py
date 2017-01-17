@@ -8,39 +8,7 @@ from Utils import readFileLines
 ToolSet = namedtuple("ToolSet", ["metadata", "tools"])
 Tool = namedtuple("Tool", ["num", "type", "size", "info"]) # size in mil
 
-def try_parse_number(s):
-    "Return int(s), float(s) or s if unparsable"
-    try:
-        return int(s)
-    except ValueError: # Try float or return s
-        try:
-            return float(s)
-        except:
-            return s
-
-def parse_tools_raw(lines):
-    "Parse tools lines into dictionaries"
-    metadata = {}
-    tools = []
-    current_tool = None
-    for line in lines:
-        if line == "TOOLS {":
-            current_tool = defaultdict(lambda: None)
-        if "=" in line:
-            k, _, v = line.partition("=")
-            if current_tool is None:
-                metadata[k] = try_parse_number(v)
-            else: # Add to current tool
-                current_tool[k] = try_parse_number(v)
-        if line == "}":
-            if current_tool is not None:
-                tools.append(current_tool)
-            current_tool = None
-    if current_tool is not None:
-        tools.append(current_tool)
-    return metadata, tools
-
-def dict_to_tool(d):
+def structured_array_to_tool(d):
     # Remove keys which are used in the tool directl
     info = {
         k: v for k, v in d.items()
