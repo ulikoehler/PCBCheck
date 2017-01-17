@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-from pcbcheck import *
+# -*- coding: utf-8 -*-
 import gzip
 from collections import namedtuple, defaultdict
 import os.path
