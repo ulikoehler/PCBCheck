@@ -20,7 +20,7 @@ array_start_re = re.compile(r"(\w+)\s+\{")
 
 def read_structured_text(filename):
     "Run parse_structured_text() on the content of the given file"
-    return parse_structured_text(readFileLines(args.file))
+    return parse_structured_text(readFileLines(filename))
 
 def parse_structured_text(lines):
     """

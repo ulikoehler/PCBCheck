@@ -1,32 +1,45 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Read 
+"""
 import gzip
 from collections import namedtuple, defaultdict
 import os.path
-from Utils import readFileLines
+from Utils import readFileLines 
+from StructuredTextParser import read_structured_text
 
-ToolSet = namedtuple("ToolSet", ["metadata", "tools"])
-Tool = namedtuple("Tool", ["num", "type", "size", "info"]) # size in mil
+__all__ = ["DrillToolSet", "DrillTool", "parse_drill_tools", "read_drill_tools"]
 
-def structured_array_to_tool(d):
-    # Remove keys which are used in the tool directl
+DrillToolSet = namedtuple("DrillToolSet", ["metadata", "tools"])
+DrillTool = namedtuple("DrillTool", ["num", "type", "size", "info"]) # size in mil
+
+def structured_array_to_drill_tool(array):
+    if array.name not in ["TOOL", "TOOLS"]:
+        raise ValueError("Array {} does not have TOOLS name but {}".format(
+            array, array.name))
     info = {
-        k: v for k, v in d.items()
+        k: v for k, v in array.attributes.items()
+        # Remove keys which are used in the tool directly
         if k not in ["NUM", "TYPE", "DRILL_SIZE"]
     }
-    return Tool(d["NUM"], d["TYPE"], d["DRILL_SIZE"], info)
+    return DrillTool(array.attributes["NUM"],
+                     array.attributes["TYPE"],
+                     array.attributes["DRILL_SIZE"], info)
 
-def parse_tools(lines):   
-    metadata, tools = parse_tools_raw(lines)
-    tools = (dict_to_tool(tool) for tool in tools)
+def parse_drill_tools(structured_text):
+    """Parse a DrillToolSet from a StructuredText set"""
+    metadata, arrays = structured_text
+    tools = (structured_array_to_drill_tool(array) for array in arrays)
     toolmap = {
         tool.num: tool for tool in tools
     }
-    return ToolSet(metadata, toolmap)
+    return DrillToolSet(metadata, toolmap)
 
-def parse_tool_file(odbpath):
-    lines = readFileLines(os.path.join(odbpath, "steps/pcb/layers/through_drill/tools"))
-    return parse_tools(lines)
+def read_drill_tools(odbpath):
+    "Read the drill tools from a given ODB++ directory"
+    stext = read_structured_text(os.path.join(odbpath, "steps/pcb/layers/through_drill/tools"))
+    return parse_drill_tools(stext)
 
 if __name__ == "__main__":
     #Parse commandline arguments
@@ -35,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument("directory", help="The ODB directory")
     args = parser.parse_args()
     #Perform check
-    toolset = parse_tool_file(args.directory)
+    toolset = read_drill_tools(args.directory)
     print("Metadata:")
     for k, v in toolset.metadata.items():
         print("\t{} = {}".format(k, v))
