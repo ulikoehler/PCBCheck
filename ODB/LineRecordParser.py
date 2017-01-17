@@ -8,8 +8,7 @@ http://www.odb-sa.com/wp-content/uploads/ODB_Format_Description_v7.pdf
 """
 from collections import defaultdict
 import os.path
-from
-from Utils import readFileLines
+from .Utils import readFileLines, readZIPFileLines
 
 def filter_line_record_lines(lines):
     "Remove empty and '#'-only lines from the given line list"
@@ -20,8 +19,9 @@ def filter_line_record_lines(lines):
 
 def read_raw_linerecords(filename):
     "Read a .Z line record file and return only important lines in order"
+    open_fn = readZIPFileLines if filename.endswith(".Z") else readFileLines
     return filter_line_record_lines(
-        readZIPFileLines(filename))
+        open_fn(filename))
 
 def group_by_section(lines):
     "Group a line record file by the section. Returns a dict containing lists."
@@ -32,7 +32,7 @@ def group_by_section(lines):
             name = line.strip("#").strip()
         else:
             groups[name].append(line)
-    return groups
+    return dict(groups)
 
 def read_linerecords(filename):
     "Read a linerecord file and return a dict grouped by section"

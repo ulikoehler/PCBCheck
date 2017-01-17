@@ -8,10 +8,10 @@ __all__ = ["readFileLines", "readGZIPFileLines", "readZIPFileLines", "try_parse_
 def try_parse_number(s):
     """
     Return int(s), float(s) or s if unparsable.
-    Also returns s if s starts with 0 unless it is "0"
+    Also returns s if s starts with 0 unless it is "0" or starts with "0."
     (and therefore can't be treated like a number)
     """
-    if s.startswith("0") and len(s) != 1:
+    if s.startswith("0") and len(s) != 1 and not s.startswith("0."):
         return s
     # Try parsing a nmeric
     try:

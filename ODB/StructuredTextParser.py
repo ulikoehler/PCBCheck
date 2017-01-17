@@ -9,7 +9,7 @@ http://www.odb-sa.com/wp-content/uploads/ODB_Format_Description_v7.pdf
 from collections import defaultdict, namedtuple
 import os.path
 import re
-from Utils import readFileLines, try_parse_number
+from .Utils import readFileLines, try_parse_number
 
 __all__ = ["StructuredArray", "StructuredText", "parse_structured_text", "read_structured_text"]
 
