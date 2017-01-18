@@ -3,7 +3,8 @@
 import gzip
 from zipfile import ZipFile
 
-__all__ = ["readFileLines", "readGZIPFileLines", "readZIPFileLines", "try_parse_number"]
+__all__ = ["readFileLines", "readGZIPFileLines", "readZIPFileLines", "try_parse_number",
+           "not_none"]
 
 def try_parse_number(s):
     """
@@ -39,4 +40,8 @@ def readZIPFileLines(filepath, codec="utf-8"):
             raise ValueError("ZIP files does not contain exactly one file: {}".format(names))
         return [l.strip() for l in
                 thezip.read(names[0]).decode(codec).split("\n")]
+
+def not_none(x):
+    "Return True exactly if x is not None. Mostly used as a filter predicate."
+    return x is not None
 
