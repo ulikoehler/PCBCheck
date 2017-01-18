@@ -4,11 +4,11 @@
 ODB++ surface parser components
 """
 import re
-from enum import Enum
 from collections import namedtuple
 from .Decoder import DecoderOption
 from .Treeifier import TreeifierRule
 from .PolygonParser import Polygon
+from .Structures import Polarity, polarity_map
 
 __all__ = ["surface_decoder_options",
            "SurfaceBeginTag", "surface_treeify_rules",
@@ -20,17 +20,6 @@ Surface = namedtuple("Surface", ["polarity", "dcode", "polygons", "attributes"])
 SurfaceBeginTag = namedtuple("SurfaceBeginTag", ["polarity", "dcode", "attributes"])
 SurfaceEndTag = namedtuple("SurfaceEndTag", [])
 
-# Enums
-class Polarity(Enum):
-    """Polarity of a layer"""
-    Positive = 1
-    Negative = 2
-    
-_polarity_map = {
-    "P": Polarity.Positive,
-    "N": Polarity.Negative
-}
-
 # Surface syntax regular expressions
 _surface_re = re.compile(r"^S\s+([PN])\s+(\d+)\s*(;\s*.+?)?$")
 _surface_end_re = re.compile(r"^SE\s*$")
@@ -41,7 +30,7 @@ def _parse_surface_start(match):
     # Parse attribute string
     attributes = parse_attributes(attributes[1:]) \
                  if attributes is not None else {}
-    return SurfaceBeginTag(_polarity_map[polarity],
+    return SurfaceBeginTag(polarity_map[polarity],
                            int(dcode), attributes)
 
 def _parse_surface_end(match):
