@@ -26,7 +26,7 @@ def parse_feature_map(elems):
 
 def parse_feature_info(linerecords):
     return FeatureInfo (
-        parse_feature_map(drill["Feature symbol names"]),
-        parse_feature_map(drill["Feature attribute names"]),
-        parse_feature_map(drill["Feature attribute text strings"])
+        parse_feature_map(linerecords["Feature symbol names"]),
+        parse_feature_map(linerecords["Feature attribute names"]),
+        parse_feature_map(linerecords["Feature attribute text strings"])
     )

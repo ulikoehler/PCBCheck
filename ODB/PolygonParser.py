@@ -16,8 +16,23 @@ __all__ = ["Polygon", "PolygonSegment", "PolygonCircle",
            "polygon_treeify_rules"]
 
 # Polygon steps consist of PolygonSegment and PolygonCircle objects
-Polygon = namedtuple("Polygon", ["type", "steps"])
-PolygonSegment = namedtuple("PolygonSegment", ["start", "end"])
+class Polygon(namedtuple("Polygon", ["type", "steps"])):
+    def min(self):
+        """Returns (minimum x, minimum y) of both coordinates"""
+        return Point(min(step.min()[0] for step in self.steps), min(step.min()[1] for step in self.steps))
+    def max(self):
+        """Returns (maximum x, maximum y) of both coordinates"""
+        return Point(max(step.max()[0] for step in self.steps), max(step.max()[1] for step in self.steps))
+
+
+class PolygonSegment(namedtuple("PolygonSegment", ["start", "end"])):
+    def min(self):
+        """Returns (minimum x, minimum y) of both coordinates"""
+        return Point(min(self.start.x, self.end.x), min(self.start.y, self.end.y))
+    def max(self):
+        """Returns (maximum x, maximum y) of both coordinates"""
+        return Point(max(self.start.x, self.end.x), max(self.start.y, self.end.y))
+
 PolygonCircle = namedtuple("PolygonCircle", ["start", "end", "center", "direction"])
 
 PolygonBeginTag = namedtuple("PolygonBeginTag", ["start", "type"])
