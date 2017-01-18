@@ -8,18 +8,19 @@ from collections import namedtuple
 from enum import Enum
 from .Structures import Point
 from .Decoder import DecoderOption
+from .Treeifier import TreeifierRule
 
 __all__ = ["Polygon", "PolygonSegment", "PolygonCircle",
            "PolygonBeginTag", "PolygonSegmentTag", "PolygonCircleTag", "PolygonEndTag",
-           "PolygonType", "CircleDirection", "polygon_parser_options"]
+           "PolygonType", "CircleDirection", "polygon_decoder_options",
+           "polygon_treeify_rules"]
 
 # Polygon steps consist of PolygonSegment and PolygonCircle objects
-Polygon = namedtuple("Polygon", ["start", "type", "steps"])
+Polygon = namedtuple("Polygon", ["type", "steps"])
 PolygonSegment = namedtuple("PolygonSegment", ["start", "end"])
 PolygonCircle = namedtuple("PolygonCircle", ["start", "end", "center", "direction"])
 
-
-PolygonBeginTag = namedtuple("PolygonBeginTag", ["end", "type"])
+PolygonBeginTag = namedtuple("PolygonBeginTag", ["start", "type"])
 PolygonSegmentTag = namedtuple("PolygonSegmentTag", ["end"])
 PolygonCircleTag = namedtuple("PolygonCircleTag", ["end", "center", "direction"])
 PolygonEndTag = namedtuple("PolygonEndTag", [])
@@ -73,9 +74,27 @@ def _parse_ob(match):
     return PolygonBeginTag(Point(float(x), float(y)),
                            _polygon_type_map[ptype]) # Empty step list
 
-polygon_parser_options = [
+polygon_decoder_options = [
     DecoderOption(_ob_re, _parse_ob),
     DecoderOption(_os_re, _parse_os),
     DecoderOption(_oc_re, _parse_oc),
     DecoderOption(_oe_re, _parse_oe)
+]
+
+def _treeifier_process_polygon(elems):
+    """Treeifier processor function for polygons."""
+    steps = []
+    cur_point, polytype = elems[0] # Poly begin tag
+    for elem in elems[1:]: # Iterate everything except the end tag
+        if isinstance(elem, PolygonSegmentTag):
+            steps.append(PolygonSegment(cur_point, elem.end))
+        if isinstance(elem, PolygonCircleTag):
+            steps.append(PolygonCircle(
+                    cur_point, elem.end, elem.center, elem.direction))
+        cur_point = elem.end
+    # Build polygon structure
+    return Polygon(polytype, steps)
+
+polygon_treeify_rules = [
+    TreeifierRule(PolygonBeginTag, PolygonEndTag, _treeifier_process_polygon)
 ]

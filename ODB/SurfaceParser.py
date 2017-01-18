@@ -7,10 +7,13 @@ import re
 from enum import Enum
 from collections import namedtuple
 from .Decoder import DecoderOption
+from .Treeifier import TreeifierRule
+from .PolygonParser import Polygon
 
-__all__ = ["surface_parser_options",
-           "SurfaceBeginTag",
-           "SurfaceEndTag", "Polarity"]
+__all__ = ["surface_decoder_options",
+           "SurfaceBeginTag", "surface_treeify_rules",
+           "surface_decoder_options",
+           "SurfaceEndTag", "Surface", "Polarity"]
 
 Surface = namedtuple("Surface", ["polarity", "dcode", "polygons", "attributes"])
 
@@ -46,7 +49,22 @@ def _parse_surface_end(match):
     return SurfaceEndTag()
 
 
-surface_parser_options = [
+surface_decoder_options = [
     DecoderOption(_surface_re, _parse_surface_start),
     DecoderOption(_surface_end_re, _parse_surface_end)
+]
+
+def _treeifier_process_surface(elems):
+    """Treeifier processor function for surfaces."""
+    polygons = []
+    polarity, dcode, attributes = elems[0] # Poly begin tag
+    for elem in elems[1:]: # Iterate everything except the end tag
+        if isinstance(elem, Polygon):
+            polygons.append(elem)
+    # Build polygon structure
+    return Surface(polarity, dcode, polygons, attributes)
+
+
+surface_treeify_rules = [
+    TreeifierRule(SurfaceBeginTag, SurfaceEndTag, _treeifier_process_surface),
 ]
