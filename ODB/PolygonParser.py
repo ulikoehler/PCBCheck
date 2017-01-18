@@ -49,7 +49,7 @@ _circle_direction_map = {
 # Regular expressions for contour syntax
 _ob_re = re.compile(r"^OB\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+([IH])")
 _os_re = re.compile(r"^OS\s+(-?[\.\d]+)\s+(-?[\.\d]+)")
-_oc_re = re.compile(r"^Oc\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+([YN])")
+_oc_re = re.compile(r"^OC\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+(-?[\.\d]+)\s+([YN])")
 _oe_re = re.compile(r"^OE\s*$")
 
 def _parse_os(match):
