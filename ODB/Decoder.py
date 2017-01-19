@@ -36,6 +36,6 @@ def _run_decoder_on_line(line, opts):
         return next(matches)
     except StopIteration:
         return None
-    
+
 def run_decoder(lines, opts):
     return (_run_decoder_on_line(line, opts) for line in lines)
