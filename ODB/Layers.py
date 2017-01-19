@@ -15,9 +15,16 @@ __all__ = ["Layer", "LayerSet", "LayerType", "parse_layers", "read_layers"]
 Layer = namedtuple("Layer", ["name", "type", "polarity", "row", "start", "end"])
 
 class LayerSet(list):
-    def find(self, layer_type):
+    def by_type(self, layer_type):
         "Find all layers that have the given type"
         return LayerSet(filter(lambda l: l.type == layer_type, self))
+    def by_name(self, name):
+        "Get a layer by name or None if there is no such layer. Case-insensitive search"
+        try:
+            name_lower = name.lower()
+            return next(filter(lambda l: l.name.lower() == name_lower, self))
+        except StopIteration:
+            return None
 
 class LayerType(Enum):
     Component = 1
