@@ -39,7 +39,9 @@ class Polarity(Enum):
     
 polarity_map = {
     "P": Polarity.Positive,
-    "N": Polarity.Negative
+    "POSITIVE": Polarity.Positive,
+    "N": Polarity.Negative,
+    "NEGATIVE": Polarity.Negative
 }
 
 class Mirror(Enum):
