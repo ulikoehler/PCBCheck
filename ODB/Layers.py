@@ -12,9 +12,12 @@ from enum import Enum
 __all__ = ["Layer", "LayerSet", "LayerType", "parse_layers", "read_layers"]
 
 # start,end = start and end layer name
-Layer = namedtuple("Layer", ["name", "type", "polarity", "row", "start", "end"])
+Layer = namedtuple("Layer", ["name", "type", "polarity", "index", "start", "end"])
 
 class LayerSet(list):
+    """
+    A list of Layer objects with extra convenience functions
+    """
     def by_type(self, layer_type):
         "Find all layers that have the given type"
         return LayerSet(filter(lambda l: l.type == layer_type, self))
@@ -25,6 +28,36 @@ class LayerSet(list):
             return next(filter(lambda l: l.name.lower() == name_lower, self))
         except StopIteration:
             return None
+
+    def component_layers(self):
+        """Get all component layers"""
+        components = self.by_type(LayerType.Component)
+        if len(components) in [2,0]: # Top, bottom or no components
+            return components
+        elif len(components) == 1:
+            layer = components[0]
+            # Top or bottom Layer? i.e. is it before or after the 1st signal layer
+            first_signal_no = self.signal_layers()[0].index
+            return [layer, None] if layer.index < first_signal_no else [None, layer]
+        else:
+            raise ValueError("Unknown length of component list: {}".format(components))
+
+    def signal_layers(self):
+        """Get all signal layers"""
+        return self.by_type(LayerType.Signal)
+
+    def top_components(self):
+        """Get the top component layer, if any"""
+        return self.component_layers()[0]
+
+    def bottom_components(self):
+        """Get the top component layer, if any"""
+        return self.component_layers()[1]
+
+    def __str__(self):
+        return ("LayerSet([\n\t{}\n])".format(
+            ",\n\t".join(
+                map(str, self))))
 
 class LayerType(Enum):
     Component = 1
@@ -77,5 +110,4 @@ if __name__ == "__main__":
     parser.add_argument("directory", help="The ODB++ directory")
     args = parser.parse_args()
     #Perform check
-    for layer in read_layers(args.directory):
-        print(layer)
+    print(read_layers(args.directory))
