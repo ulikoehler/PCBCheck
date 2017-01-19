@@ -31,9 +31,11 @@ def parse_attributes(attribute_str):
     # Split into individual key/value pairs
     attrs = (s.strip() for s in attribute_str.split(","))
     # Split each k/v pair into individual parts
-    part_attrs = (attr.partition("=") for attr in attrs)
+    part_attrs = (
+        attr.partition("=") if "=" in attr else (attr, None, True)
+        for attr in attrs)
     # Create dict of ints
     return {
-        int(attr[0]): int(attr[2])
+        int(attr[0]): int(attr[2]) if not isinstance(attr[2], bool) else attr[2]
         for attr in part_attrs
     }

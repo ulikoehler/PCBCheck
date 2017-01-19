@@ -5,14 +5,26 @@ Parser for the ODB++ PCB matrix file
 """
 import os.path
 from collections import namedtuple
-from .StructuredTextParser import *
+from .StructuredTextParser import read_structured_text
+from .LineRecordParser import read_linerecords
 from .Structures import polarity_map
 from enum import Enum
 
-__all__ = ["Layer", "LayerSet", "LayerType", "parse_layers", "read_layers"]
+__all__ = ["Layer", "LayerSet", "LayerType", "parse_layers", "read_layers",
+           "read_layer_components", "read_layer_features"]
 
-# start,end = start and end layer name
-Layer = namedtuple("Layer", ["name", "type", "polarity", "index", "start", "end"])
+class Layer(namedtuple("Layer", ["name", "type", "polarity", "index", "start", "end"])):
+    """
+    A layer reference in a ODB++ dataset
+    start,end = start and end layer name
+    """
+    def read_features(self, directory):
+        """Read the layer feature file for the current layer from the given directory"""
+        return read_layer_features(directory, self.name)
+
+    def read_components(self, directory):
+        """Read the layer components file for the current layer from the given directory"""
+        return read_layer_components(directory, self.name)
 
 class LayerSet(list):
     """
@@ -102,6 +114,15 @@ def parse_layers(matrix):
 def read_layers(directory):
     matrix = read_structured_text(os.path.join(directory, "matrix/matrix"))
     return parse_layers(matrix)
+
+def read_layer_components(directory, layer):
+    return read_linerecords(os.path.join(
+        directory, "steps", "pcb", "layers", layer, "components.Z"))
+
+def read_layer_features(directory, layer):
+    return read_linerecords(os.path.join(
+        directory, "steps", "pcb", "layers", layer, "features.Z"))
+
 
 if __name__ == "__main__":
     #Parse commandline arguments

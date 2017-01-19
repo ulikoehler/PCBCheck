@@ -7,7 +7,7 @@ from collections import namedtuple
 from enum import Enum
 import numbers
 
-__all__ = ["Point", "Polarity", "polarity_map", "Mirror"]
+__all__ = ["Point", "Polarity", "polarity_map", "Mirror", "mirror_map"]
 
 # Named tuples
 class Point(namedtuple("Point", ["x", "y"])):
@@ -47,7 +47,12 @@ polarity_map = {
 class Mirror(Enum):
     """Mirror settings"""
     No = 1
-    MirrorX = 2
-    MirrorY = 3
-    MirrorXY = 4
-    
+    Mirror = 2 # Unspecific mirroring
+    MirrorX = 3
+    MirrorY = 4
+    MirrorXY = 5
+
+mirror_map = {
+    "N": Mirror.No,
+    "M": Mirror.Mirror
+}
