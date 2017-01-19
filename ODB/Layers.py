@@ -11,7 +11,8 @@ from enum import Enum
 
 __all__ = ["Layer", "LayerSet", "LayerType", "parse_layers", "read_layers"]
 
-Layer = namedtuple("Layer", ["name", "type", "polarity", "row"])
+# start,end = start and end layer name
+Layer = namedtuple("Layer", ["name", "type", "polarity", "row", "start", "end"])
 
 class LayerSet(list):
     def find(self, layer_type):
@@ -52,7 +53,9 @@ def parse_layers(matrix):
                 array.attributes["NAME"].lower(), # DipTrace seems to use lowercase for directories
                 _layer_type_map[array.attributes["TYPE"]],
                 polarity_map[array.attributes["POLARITY"]],
-                int(array.attributes["ROW"])
+                int(array.attributes["ROW"]),
+                array.attributes["START_NAME"].lower() or None,
+                array.attributes["END_NAME"].lower() or None
         ))
     return layers
 
