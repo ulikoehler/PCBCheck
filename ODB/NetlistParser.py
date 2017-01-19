@@ -11,10 +11,12 @@ from collections import namedtuple, defaultdict
 from .Utils import const_false, not_none, try_parse_number
 from .Structures import Point
 from enum import Enum
+from .Decoder import DecoderOption
 
 __all__ = ["is_netlist_optimized", "parse_net_names", "StaggeringParameters",
            "NetlistPointTypeInformation", "NetlistPoint", "TestpointTestSide",
-           "NetSide", "NetPointLocation", "NetPointExposure"]
+           "NetSide", "NetPointLocation", "NetPointExposure",
+           "netlist_decoder_options", "assign_net_name"]
 
 _h_optimize_re = re.compile(r"^H\s+optimize\s+([YN])\s*$", re.IGNORECASE)
 
@@ -87,10 +89,8 @@ def _parse_netlist_point(match):
     # netid -1 => tooling hole
     netid, radius, x, y, side, wh, point_location, exposure, staggered, v, f, t, m, xtension, testside = match.groups()
     # wh is only not None when radius is 0 (probably a plated slot)
-    print(wh)
     if wh is not None:
         w, _, h = wh.partition(" ")
-        print(w, h)
     # Staggered is mostly set for DipTrace exports
     if staggered is not None:
         sx, sy, sr = staggered.split()[1:]
@@ -172,3 +172,18 @@ _net_point_exposure_lut = {
     "p": NetPointExposure.SolderMaskCoveredPrimaryTop,
     "s": NetPointExposure.SolderMaskCoveredSecondaryBottom
 }
+
+netlist_decoder_options = [
+    DecoderOption(_netlist_point_re, _parse_netlist_point)
+]
+
+def assign_net_name(netnames, netpoint):
+    """Looksup the netpoint netid in the net name map and replace """
+    netid = netpoint.netid
+    if netid not in netnames:
+        return netpoint
+    netname = netnames[netid]
+    # Tuples and namedtuples are immutable, so we'll use an intermediary list
+    params = list(netpoint)
+    params[0] = netname
+    return NetlistPoint(*params)
