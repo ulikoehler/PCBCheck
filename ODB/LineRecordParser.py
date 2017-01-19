@@ -7,7 +7,6 @@ according to the ODB++ 7.0 specification:
 http://www.odb-sa.com/wp-content/uploads/ODB_Format_Description_v7.pdf
 """
 from collections import defaultdict
-import os.path
 from .Utils import readFileLines, readZIPFileLines
 
 def filter_line_record_lines(lines):

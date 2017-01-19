@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Read 
+Read the structured text ODB++ drill tools file
 """
 import gzip
 from collections import namedtuple, defaultdict
