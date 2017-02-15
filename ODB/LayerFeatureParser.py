@@ -7,7 +7,7 @@ Parses features like pads and lines from
 """
 from collections import namedtuple
 from .Decoder import DecoderOption, run_decoder
-from .Structures import Mirror
+from .Structures import Mirror, Point, polarity_map
 from .Attributes import parse_attributes
 import re
 
