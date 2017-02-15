@@ -3,8 +3,8 @@
 """
 ODB++ standard symbol geometries
 """
-
-parse_feature_info(bottom)
+from enum import Enum
+from collections import namedtuple
 
 # See ODB++ 7.0 spec page 202
 Round = namedtuple("Round", ["diameter"])
@@ -44,3 +44,16 @@ RoundedSquareThermalOpenCorners = namedtuple("RoundedSquareThermalOpenCorners", 
 RoundedRectangleThermal = namedtuple("RoundedRectangleThermal", ["outer_width", "outer_height", "angle", "num_spokes", "gap", "corner_radius", "corners"])
 RoundedRectangleThermalOpenCorners = namedtuple("RoundedRectangleThermalOpenCorners", ["outer_width", "outer_height", "angle", "num_spokes", "gap", "corner_radius", "corners"])
 OvalThermal = namedtuple("OvalThermal", ["outer_width", "outer_height", "angle", "num_spokes", "gap", "line_width"])
+OvalThermalOpenCorners = namedtuple("OvalThermalOpenCorners", ["outer_width", "outer_height", "angle", "num_spokes", "gap", "line_width"])
+
+Ellipse = namedtuple("Ellipse", ["width", "height"])
+
+Moire = namedtuple("Moire", ["ring_width", "ring_gap", "num_rings", "line_width", "line_length", "line_angle"])
+
+
+class HolePlating(Enum):
+    Plated = 1
+    NonPlated = 2
+    Via = 3
+
+Hole = namedtuple("Hole", ["diameter", "plating", "tolerance_plus", "tolerance_minus"])
