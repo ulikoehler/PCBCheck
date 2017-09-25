@@ -7,7 +7,6 @@ from collections import namedtuple, defaultdict, Counter
 import subprocess
 import re
 from ansicolor import red, yellow, green, black
-from ODB.Utils import *
 
 def extractToolStatistics(lines):
     """
