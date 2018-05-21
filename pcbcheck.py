@@ -8,6 +8,10 @@ import subprocess
 import re
 from ansicolor import red, yellow, green, black
 
+def readFileLines(filename):
+    with open(filename) as infile:
+        return infile.read().split("\n")
+
 def extractToolStatistics(lines):
     """
     From a list of excellon drill lines extract the number of holes for all drill sizes.
