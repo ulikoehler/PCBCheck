@@ -9,7 +9,7 @@ import re
 from ansicolor import red, yellow, green, black
 
 def readFileLines(filename):
-    with open(filename) as infile:
+    with open(filename, encoding="iso-8859-1") as infile:
         return infile.read().split("\n")
 
 def extractToolStatistics(lines):
